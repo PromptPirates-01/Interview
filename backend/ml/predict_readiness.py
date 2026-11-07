@@ -1,6 +1,12 @@
+from pathlib import Path
 import joblib
 
-model = joblib.load("ml/readiness_model.pkl")
+MODEL_PATH = Path(__file__).resolve().parent / "readiness_model.pkl"
+
+if not MODEL_PATH.exists():
+    raise FileNotFoundError(f"Readiness model not found: {MODEL_PATH}")
+
+model = joblib.load(MODEL_PATH)
 
 
 def predict_readiness(fluency, correctness, eye_contact, posture, head_stability):
@@ -9,7 +15,8 @@ def predict_readiness(fluency, correctness, eye_contact, posture, head_stability
         [[fluency, correctness, eye_contact, posture, head_stability]]
     )
 
-    return float(round(prediction[0],2))
+    return float(round(prediction[0], 2))
+
 
 if __name__ == "__main__":
 
