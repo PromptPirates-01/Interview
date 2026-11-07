@@ -17,7 +17,7 @@ xgboost==3.3.0
 
 opencv-python
 opencv-contrib-python
-mediapipe
+mediapipe==0.10.21
 
 
 
