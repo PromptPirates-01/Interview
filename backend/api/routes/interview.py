@@ -1,0 +1,76 @@
+from pathlib import Path
+import shutil
+import uuid
+
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from typing import List
+
+from interview.interview_service import analyze_answer
+
+router = APIRouter()
+
+# Temporary folder for uploaded audio
+TEMP_DIR = Path("interview/temp")
+TEMP_DIR.mkdir(parents=True, exist_ok=True)
+
+
+@router.get("/")
+def test():
+    return {"message": "Interview API Working"}
+
+
+@router.post("/analyze")
+async def analyze_interview(question: str = Form(...), audio: UploadFile = File(...)):
+    try:
+
+        audio_filename = f"{uuid.uuid4()}.wav"
+
+        audio_path = TEMP_DIR / audio_filename
+
+        transcript_path = TEMP_DIR / f"{audio_path.stem}.txt"
+
+        with open(audio_path, "wb") as buffer:
+            shutil.copyfileobj(audio.file, buffer)
+
+        result = analyze_answer(
+            question=question,
+            audio_file=str(audio_path),
+            transcript_file=str(transcript_path),
+            answer_duration=30,
+        )
+
+        return result
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+import gc
+import os
+from interview import speech_to_text
+
+
+@router.post("/cleanup")
+async def cleanup():
+
+    # Release Whisper model
+    # if hasattr(speech_to_text, "whisper_model"):
+    #   speech_to_text.whisper_model = None
+
+    # Delete temporary interview files
+    temp_files = [
+        "temp_audio.wav",
+        "temp_answer.wav",
+        "temp_video.webm",
+    ]
+
+    for file in temp_files:
+        if os.path.exists(file):
+            try:
+                os.remove(file)
+            except:
+                pass
+
+    gc.collect()
+
+    return {"success": True}
